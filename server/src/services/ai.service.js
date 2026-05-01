@@ -105,13 +105,27 @@ class AIService {
    * @returns {Promise<{data: Object, usage: Object}>} Datos parseados y uso de tokens
    */
   async callAI(systemPrompt, userMessage, schemaName, zodSchema) {
-    const responseFormat = zodToResponseFormat(schemaName, zodSchema);
+    const useStrictSchema = this.config.provider === 'openai';
+
+    // DeepSeek no soporta json_schema estricto, usa json_object con el schema en el prompt
+    let responseFormat;
+    let finalSystemPrompt = systemPrompt;
+
+    if (useStrictSchema) {
+      // OpenAI: structured output estricto con json_schema
+      responseFormat = zodToResponseFormat(schemaName, zodSchema);
+    } else {
+      // DeepSeek/otros: json_object + schema inyectado en el prompt
+      responseFormat = { type: 'json_object' };
+      const schemaExample = this._zodSchemaToExample(zodSchema);
+      finalSystemPrompt += `\n\nRESPONDE ÚNICAMENTE con un JSON válido que siga EXACTAMENTE esta estructura:\n${JSON.stringify(schemaExample, null, 2)}`;
+    }
 
     try {
       const completion = await this.client.chat.completions.create({
         model: this.config.model,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: finalSystemPrompt },
           { role: 'user', content: userMessage },
         ],
         response_format: responseFormat,
@@ -316,6 +330,46 @@ class AIService {
     }
 
     return record;
+  }
+
+  // ───────────────────────────────────────────
+  // Helper: Generar ejemplo de schema para prompt
+  // ───────────────────────────────────────────
+
+  /**
+   * Genera un objeto de ejemplo a partir de un Zod schema.
+   * Se usa para inyectar la estructura esperada en el prompt cuando
+   * el provider no soporta json_schema estricto (ej: DeepSeek).
+   */
+  _zodSchemaToExample(schema) {
+    const { z } = require('zod');
+
+    if (schema instanceof z.ZodObject) {
+      const result = {};
+      for (const [key, value] of Object.entries(schema.shape)) {
+        result[key] = this._zodSchemaToExample(value);
+      }
+      return result;
+    }
+    if (schema instanceof z.ZodArray) {
+      return [this._zodSchemaToExample(schema.element)];
+    }
+    if (schema instanceof z.ZodEnum) {
+      return schema.options.join(' | ');
+    }
+    if (schema instanceof z.ZodString) {
+      return schema.description || 'string';
+    }
+    if (schema instanceof z.ZodNumber) {
+      return schema.description || 0;
+    }
+    if (schema instanceof z.ZodBoolean) {
+      return false;
+    }
+    if (schema instanceof z.ZodNullable) {
+      return this._zodSchemaToExample(schema.unwrap()) + ' | null';
+    }
+    return 'string';
   }
 }
 
