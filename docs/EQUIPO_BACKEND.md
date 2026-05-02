@@ -14,7 +14,7 @@ Conectar la **capa de IA** (ya implementada) con la **base de datos** (equipo DB
 
 ## Contexto: Lo que ya está implementado
 
-La capa de IA ya está completa y funcional. Estos archivos **no necesitan modificación** (a menos que el lead lo indique):
+La capa de IA ya está completa y funcional. Estos archivos **no necesitan modificación** :
 
 | Archivo | Qué hace | ¿Modificar? |
 |---------|----------|-------------|
