@@ -1,23 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 
-// Recibimos 'onLogin' como prop desde AppNavigator
-const LoginScreen = ({ onLogin }) => { 
+const LoginScreen = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
 
   const handleLogin = () => {
-    // Validación básica para el simulacro
     if (email.trim() === '' || password.trim() === '') {
-      Alert.alert("Error", "Por favor completa todos los campos");
+      Alert.alert("Acceso denegado", "Por favor completa tus credenciales");
       return;
     }
 
-    // Simulamos éxito de login
-    console.log("Login exitoso con:", email);
-    
     // Ejecutamos la función que cambia isLoggedIn a true en AppNavigator
     if (onLogin) {
       onLogin();
@@ -25,84 +32,172 @@ const LoginScreen = ({ onLogin }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Correo electrónico"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
+    <ImageBackground
+      source={require('../../../assets/bg_cyberpunk.png')}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Iniciar Sesión</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        onPress={() => navigation.navigate('Register')}
-        style={styles.linkContainer}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
       >
-        <Text style={styles.linkText}>¿No tienes cuenta? Regístrate aquí</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Logo and Brand */}
+        <View style={styles.brandContainer}>
+          <Image
+            source={require('../../../assets/logo.svg')}
+            style={styles.logo}
+            contentFit="contain"
+          />
+          <Text style={styles.title}>Zenith</Text>
+          <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+        </View>
+
+        {/* Glassmorphism Form Container */}
+        <View style={styles.formContainer}>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="mail-outline" size={20} color="#8AABC8" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Correo electrónico"
+              placeholderTextColor="#8AABC8"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Ionicons name="lock-closed-outline" size={20} color="#8AABC8" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Contraseña"
+              placeholderTextColor="#8AABC8"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
+            <Text style={styles.buttonText}>AUTENTICAR</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Register')}
+            style={styles.linkContainer}
+          >
+            <Text style={styles.linkText}>¿Nuevo usuario? <Text style={styles.linkHighlight}>Regístrate aquí</Text></Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    padding: 20,
+    backgroundColor: '#050A15',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1e293b',
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(5, 10, 21, 0.45)', // Lighter overlay to show the new wallpaper
+  },
+  keyboardView: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  brandContainer: {
+    alignItems: 'center',
     marginBottom: 40,
   },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#fff',
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 4,
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#E0E7EE',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  formContainer: {
+    backgroundColor: 'rgba(15, 25, 45, 0.65)',
+    borderRadius: 24,
+    padding: 24,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+    borderColor: 'rgba(80, 160, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(5, 10, 21, 0.6)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(80, 160, 255, 0.1)',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    height: '100%',
   },
   button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#2563eb',
-    borderRadius: 10,
+    backgroundColor: '#3A7ABF',
+    borderRadius: 12,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
+    shadowColor: '#3A7ABF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 2,
   },
   linkContainer: {
-    marginTop: 20,
+    marginTop: 24,
+    alignItems: 'center',
   },
   linkText: {
-    color: '#2563eb',
-    fontWeight: '600',
+    color: '#8AABC8',
+    fontSize: 14,
+  },
+  linkHighlight: {
+    color: '#50A0FF',
+    fontWeight: 'bold',
   },
 });
 

@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+
+// Pantalla de Carga
+import LoadingScreen from '../screens/LoadingScreen';
 
 // Pantallas de Auth
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -47,7 +50,21 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Simulamos la carga inicial (ej. validar token en AsyncStorage)
+    const initApp = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500); // 2.5 segundos de pantalla de carga
+    
+    return () => clearTimeout(initApp);
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
