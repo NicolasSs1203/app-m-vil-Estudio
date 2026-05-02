@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "seed": "node src/scripts/seed.js",
+      "db:export": "node src/scripts/db-export.js",
+  "db:import": "node src/scripts/db-import.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +19,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "mongoose": "^9.6.1",
     "nodemon": "^3.1.14",
     "openai": "^6.34.0",
     "zod": "^4.3.6"
