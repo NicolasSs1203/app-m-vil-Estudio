@@ -2,68 +2,122 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
-// Importamos tu middleware para la ruta /me
+const { User } = require('../models/Schemas');
 const { authMiddleware } = require('../middleware/auth.middleware');
 
 // ───────────────────────────────────────────
-// 1. POST /api/auth/register (Checklist ✅)
-// ───────────────────────────────────────────
-router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    
-    // Hasheamos la contraseña antes de "guardarla"
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // TODO: Aquí conectarás con tu DB de MongoDB
-    const newUser = { id: Date.now().toString(), name, email };
-
-    const token = jwt.sign(
-      { id: newUser.id, email: newUser.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({ success: true, token, user: newUser });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al registrar usuario' });
-  }
-});
-
-// ───────────────────────────────────────────
-// 2. POST /api/auth/login (Checklist ✅)
+// 1. POST /api/auth/login — Conectado a MongoDB Atlas ✅
 // ───────────────────────────────────────────
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const mockUser = {
-      id: 'user_123',
-      email: 'santiago@estudio.com',
-      passwordHash: await bcrypt.hash('123456', 10) 
-    };
-
-    const isMatch = await bcrypt.compare(password, mockUser.passwordHash);
-    
-    if (email !== mockUser.email || !isMatch) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Correo y contraseña son requeridos' });
     }
 
+    // Buscar usuario en MongoDB Atlas (incluir passwordHash explícitamente)
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+passwordHash');
+
+    if (!user) {
+      return res.status(401).json({ error: 'Recluta no encontrado. Verifica tu correo.' });
+    }
+
+    // Si el usuario tiene contraseña hasheada, verificarla; si no (usuarios de prueba), permitir
+    if (user.passwordHash) {
+      const isMatch = await bcrypt.compare(password, user.passwordHash);
+      if (!isMatch) {
+        return res.status(401).json({ error: 'Contraseña incorrecta.' });
+      }
+    }
+
+    // Actualizar actividad
+    user.lastActiveAt = new Date();
+    await user.save();
+
+    // Generar JWT real
     const token = jwt.sign(
-      { id: mockUser.id, email: mockUser.email },
+      { id: user._id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({ success: true, token, user: { id: mockUser.id, email: mockUser.email } });
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        displayName: user.displayName,
+        preferences: user.preferences
+      }
+    });
+
   } catch (error) {
-    res.status(500).json({ error: 'Error en el servidor' });
+    console.error('❌ Error en /api/auth/login:', error);
+    res.status(500).json({ error: 'Error interno del servidor al autenticar' });
   }
 });
 
 // ───────────────────────────────────────────
-// 3. POST /api/auth/refresh (Checklist ✅)
+// 2. POST /api/auth/register — Crea usuario en MongoDB ✅
+// ───────────────────────────────────────────
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password, nivel } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Nombre, correo y contraseña son requeridos' });
+    }
+
+    // Verificar si ya existe
+    const existing = await User.findOne({ email: email.trim().toLowerCase() });
+    if (existing) {
+      return res.status(409).json({ error: 'Ya existe una cuenta con ese correo' });
+    }
+
+    // Hashear contraseña
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Mapear nivel al formato del schema
+    const levelMap = { 'Principiante': 'beginner', 'Intermedio': 'intermediate', 'Avanzado': 'advanced' };
+    const experienceLevel = levelMap[nivel] || 'beginner';
+
+    // Crear usuario en la DB
+    const newUser = new User({
+      email: email.trim().toLowerCase(),
+      displayName: name,
+      passwordHash,
+      preferences: {
+        language: 'es',
+        experienceLevel,
+        learningGoals: [],
+        dailyGoalMinutes: 30
+      }
+    });
+    await newUser.save();
+
+    const token = jwt.sign(
+      { id: newUser._id, email: newUser.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: { id: newUser._id, email: newUser.email, displayName: newUser.displayName }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en /api/auth/register:', error);
+    res.status(500).json({ error: 'Error al registrar usuario' });
+  }
+});
+
+// ───────────────────────────────────────────
+// 3. POST /api/auth/refresh — Renueva el token ✅
 // ───────────────────────────────────────────
 router.post('/refresh', (req, res) => {
   const { token } = req.body;
@@ -73,10 +127,8 @@ router.post('/refresh', (req, res) => {
   }
 
   try {
-    // Verificamos el token (incluso si ya expiró para poder renovarlo)
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { ignoreExpiration: true });
 
-    // Generamos un nuevo token con otros 24h de vida
     const newToken = jwt.sign(
       { id: decoded.id, email: decoded.email },
       process.env.JWT_SECRET,
@@ -90,13 +142,16 @@ router.post('/refresh', (req, res) => {
 });
 
 // ───────────────────────────────────────────
-// 4. GET /api/auth/me (Checklist ✅)
+// 4. GET /api/auth/me — Perfil del usuario logueado ✅
 // ───────────────────────────────────────────
-router.get('/me', authMiddleware, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user
-  });
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-passwordHash');
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener perfil' });
+  }
 });
 
-module.exports = router;
+module.exports = router;

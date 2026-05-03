@@ -13,21 +13,40 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import authService from '../../services/auth.service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (email.trim() === '' || password.trim() === '') {
       Alert.alert("Acceso denegado", "Por favor completa tus credenciales");
       return;
     }
 
-    // Ejecutamos la función que cambia isLoggedIn a true en AppNavigator
-    if (onLogin) {
-      onLogin();
+    try {
+      setIsLoading(true);
+      const response = await authService.login(email.trim().toLowerCase(), password);
+      console.log('✅ Login exitoso:', response.message);
+      
+      // Guardar el token para futuras peticiones (como dice el Checklist)
+      if (response.token) {
+        await AsyncStorage.setItem('userToken', response.token);
+      }
+      
+      if (onLogin) {
+        onLogin();
+      }
+    } catch (error) {
+      console.error('❌ Error Login:', error.message);
+      const errorMsg = error.response?.data?.error || 'No se pudo conectar con el servidor NEXUS';
+      Alert.alert("Autenticación Fallida", errorMsg);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -81,8 +100,13 @@ const LoginScreen = ({ onLogin }) => {
             />
           </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
-            <Text style={styles.buttonText}>AUTENTICAR</Text>
+          <TouchableOpacity 
+            style={[styles.button, isLoading && { opacity: 0.7 }]} 
+            onPress={handleLogin} 
+            activeOpacity={0.8}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>{isLoading ? 'AUTENTICANDO...' : 'AUTENTICAR'}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

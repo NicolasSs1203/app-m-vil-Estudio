@@ -8,6 +8,8 @@ const mongoose = require('mongoose'); // Agregado: Mongoose para la conexión
 require('dotenv').config();
 
 const createAIRoutes = require('./routes/ai.routes');
+const authRoutes = require('./routes/auth.routes');
+const createExerciseRoutes = require('./routes/exercise.routes');
 const { authMiddleware, aiRateLimiter } = require('./middleware/auth.middleware');
 
 // ============================================================
@@ -81,6 +83,8 @@ connectDB();
 // ───────────────────────────────────────────
 // Ahora se pasa la instancia 'db' real una vez conectada
 app.use('/api/ai', authMiddleware, aiRateLimiter, createAIRoutes(db));
+app.use('/api/auth', authRoutes);
+app.use('/api/exercises', createExerciseRoutes(db));
 
 // ───────────────────────────────────────────
 // Manejo de errores global
@@ -103,10 +107,12 @@ app.listen(PORT, () => {
   console.log(`   AI Model: ${process.env.AI_MODEL || 'gpt-4o-mini'}`);
   console.log(`\n📡 Endpoints:`);
   console.log(`   GET  /api/health`);
-  console.log(`   GET  /api/ai/health`);
-  console.log(`   POST /api/ai/analyze-exercise`);
-  console.log(`   POST /api/ai/recommendations`);
-  console.log(`   GET  /api/ai/progress/:userId`);
+  console.log(`   POST /api/auth/login`);
+  console.log(`   POST /api/auth/register`);
+  console.log(`   GET  /api/auth/me`);
+  console.log(`   GET  /api/exercises`);
+  console.log(`   GET  /api/exercises/:id`);
+  console.log(`   POST /api/exercises/:id/submit`);
   console.log(`   POST /api/ai/chat`);
   console.log('');
 });

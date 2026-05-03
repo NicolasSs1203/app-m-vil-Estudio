@@ -1,7 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'https://tu-backend-en-render.com/api'; 
+import { Platform } from 'react-native';
+
+const DEV_IP = Platform.OS === 'android' ? '10.0.2.2' : '192.168.1.3';
+const API_URL = `http://${DEV_IP}:3001/api`; 
 
 const api = axios.create({
   baseURL: API_URL,

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   displayName: String,
+  passwordHash: { type: String, select: false }, // No se incluye en queries por defecto
   preferences: {
     language: { type: String, enum: ['es', 'en'], default: 'es' },
     learningGoals: [String],
