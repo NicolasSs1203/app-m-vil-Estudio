@@ -17,3 +17,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#0f172a' },
   subtitle: { fontSize: 16, color: '#475569' },
 });
+
+// Esto sera skilltreeScreen
