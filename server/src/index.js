@@ -1,9 +1,26 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');  // ← Agrega esta línea
+
 const express = require('express');
 const cors = require('cors');
+// ... resto del código
+const mongoose = require('mongoose'); // Agregado: Mongoose para la conexión
 require('dotenv').config();
 
 const createAIRoutes = require('./routes/ai.routes');
 const { authMiddleware, aiRateLimiter } = require('./middleware/auth.middleware');
+
+// ============================================================
+// IMPORTACIÓN DE MODELOS (Basado en image_a4e876.png)
+// ============================================================
+// Importamos los modelos para que estén disponibles en toda la app
+const { 
+  User, 
+  Exercise, 
+  UserResponse, 
+  AIAnalysis, 
+  LearningPath 
+} = require('./models/Schemas');
 
 // ============================================================
 // Server Entry Point
@@ -25,33 +42,44 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'software-learning-app',
+    // Actualizado: Reporta estado de DB (0: desc, 1: conn, 2: connecting, 3: disconn)
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   });
 });
 
 // ───────────────────────────────────────────
-// Conexión a base de datos
+// Conexión a base de datos (Implementado según image_b0cbec.png)
 // ───────────────────────────────────────────
-// TODO (equipo backend): Implementar conexión real a MongoDB
-// Ejemplo con driver nativo:
-//
-// const { MongoClient } = require('mongodb');
-// const client = new MongoClient(process.env.MONGODB_URI);
-// await client.connect();
-// const db = client.db();
-//
-// Ejemplo con Mongoose:
-//
-// const mongoose = require('mongoose');
-// await mongoose.connect(process.env.MONGODB_URI);
-
-// Por ahora, db es null — la capa de IA funciona sin DB (logs a consola)
 let db = null;
+
+const connectDB = async () => {
+  try {
+    // Conexión usando la URI del .env
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    db = conn.connection;
+    console.log(`✅ MongoDB Conectado: ${db.host}`);
+  } catch (error) {
+    // Manejo de errores y logs
+    console.error(`❌ Error de conexión a MongoDB: ${error.message}`);
+    
+    // Tip de seguridad para el usuario (image_a4e876.png)
+    if (error.message.includes('Authentication failed')) {
+        console.log('👉 Revisa que la contraseña en tu archivo .env no tenga los caracteres < >');
+    }
+    
+    console.log('Reintentando conexión en 5 segundos...');
+    setTimeout(connectDB, 5000); // Retry automático
+  }
+};
+
+connectDB();
 
 // ───────────────────────────────────────────
 // Rutas de IA (con middleware de auth y rate limit)
 // ───────────────────────────────────────────
+// Ahora se pasa la instancia 'db' real una vez conectada
 app.use('/api/ai', authMiddleware, aiRateLimiter, createAIRoutes(db));
 
 // ───────────────────────────────────────────
