@@ -8,11 +8,12 @@ class ExerciseService {
   async findAll(filters = {}) {
     const { topic, difficulty, category } = filters;
     const query = {};
-    if (topic) query.topic = topic;
-    if (difficulty) query.difficulty = difficulty;
-    if (category) query.category = category;
-    
-    // Devolvemos los ejercicios excluyendo la respuesta correcta por seguridad (opcional, pero buena práctica)
+
+    // Filtros case-insensitive: "Easy", "easy", "EASY" → todos funcionan
+    if (topic)      query.topic      = { $regex: new RegExp(`^${topic}$`, 'i') };
+    if (difficulty) query.difficulty = { $regex: new RegExp(`^${difficulty}$`, 'i') };
+    if (category)   query.category   = { $regex: new RegExp(`^${category}$`, 'i') };
+
     return await Exercise.find(query).select('-correctAnswer');
   }
 
