@@ -52,7 +52,7 @@ const LoginScreen = ({ onLogin }) => {
 
   return (
     <ImageBackground
-      source={require('../../../assets/bg_cyberpunk.png')}
+      source={require('../../../assets/fondoBlanco.jpg')}
       style={styles.container}
       resizeMode="cover"
     >
@@ -65,7 +65,7 @@ const LoginScreen = ({ onLogin }) => {
         {/* Logo and Brand */}
         <View style={styles.brandContainer}>
           <Image
-            source={require('../../../assets/logo.svg')}
+            source={require('../../../assets/logo4.png')}
             style={styles.logo}
             contentFit="contain"
           />
@@ -76,7 +76,7 @@ const LoginScreen = ({ onLogin }) => {
         {/* Glassmorphism Form Container */}
         <View style={styles.formContainer}>
           <View style={styles.inputWrapper}>
-            <Ionicons name="mail-outline" size={20} color="#8AABC8" style={styles.inputIcon} />
+            <Ionicons name="mail-outline" size={20} color="#FF3131" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Correo electrónico"
@@ -89,7 +89,7 @@ const LoginScreen = ({ onLogin }) => {
           </View>
 
           <View style={styles.inputWrapper}>
-            <Ionicons name="lock-closed-outline" size={20} color="#8AABC8" style={styles.inputIcon} />
+            <Ionicons name="lock-closed-outline" size={20} color="#FF3131" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Contraseña"
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(5, 10, 21, 0.45)', // Lighter overlay to show the new wallpaper
+    backgroundColor: 'rgba(0, 0, 0, 0.25)', // Capa de contraste para suavizar el blanco de fondo
   },
   keyboardView: {
     flex: 1,
@@ -140,52 +140,58 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 16,
+    width: 220,
+    height: 220,
+    marginBottom: 0, // Reducimos el margen porque el logo ya es grande
   },
   title: {
-    fontSize: 36,
+    fontSize: 52,
     fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 4,
-    marginBottom: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    color: '#FF3131', // Rojo Neón Brillante
+    letterSpacing: 5,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    textShadowColor: 'rgba(255, 49, 49, 0.8)', // Resplandor Neón
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+    marginBottom: 0,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#E0E7EE',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(0, 0, 0, 0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    fontSize: 12,
+    color: '#FF3131', // Subtítulo también en rojo neón suave
+    letterSpacing: 3,
+    textAlign: 'center',
+    marginBottom: 25,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    opacity: 0.8,
   },
   formContainer: {
-    backgroundColor: 'rgba(15, 25, 45, 0.65)',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(80, 160, 255, 0.2)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    backgroundColor: 'rgba(15, 20, 30, 0.8)', // Semi-transparente para efecto cristal
+    borderRadius: 30,
+    padding: 28,
+    borderWidth: 1.5,
+    borderColor: '#FF3131',
+    shadowColor: '#FF3131',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 15,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(5, 10, 21, 0.6)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)', // Casi invisible
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(80, 160, 255, 0.1)',
+    borderColor: 'rgba(255, 49, 49, 0.2)', // Borde rojo muy sutil
     marginBottom: 16,
     paddingHorizontal: 16,
     height: 56,
   },
   inputIcon: {
     marginRight: 12,
+    color: '#FF3131', // Iconos en rojo
   },
   input: {
     flex: 1,
@@ -194,22 +200,22 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   button: {
-    backgroundColor: '#3A7ABF',
+    backgroundColor: '#FF3131', // Botón Rojo Neón
     borderRadius: 12,
     height: 56,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#3A7ABF',
+    shadowColor: '#FF3131',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 2,
+    fontWeight: '900',
+    letterSpacing: 3,
   },
   linkContainer: {
     marginTop: 24,
@@ -220,7 +226,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   linkHighlight: {
-    color: '#50A0FF',
+    color: '#FF3131', // Enlace en rojo
     fontWeight: 'bold',
   },
 });
