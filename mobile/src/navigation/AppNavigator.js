@@ -29,7 +29,7 @@ import RecommendationScreen from '../screens/RecommendationScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MainTabs() {
+function MainTabs({ onLogout }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -53,7 +53,9 @@ function MainTabs() {
       <Tab.Screen name="Árbol" component={SkillTreeScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Ejercicios" component={ExercisesScreen} />
       <Tab.Screen name="Chat IA" component={ChatAIScreen} />
-      <Tab.Screen name="Perfil" component={ProfileScreen} />
+      <Tab.Screen name="Perfil">
+        {(props) => <ProfileScreen {...props} onLogout={onLogout} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -70,6 +72,10 @@ export default function AppNavigator() {
     return () => clearTimeout(initApp);
   }, []);
 
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
+
   if (isLoading) {
     return <LoadingScreen />;
   }
@@ -78,16 +84,15 @@ export default function AppNavigator() {
     <Stack.Navigator 
       screenOptions={{ 
         headerShown: false,
-        // F-11: Transición suave de desvanecimiento entre pantallas
         cardStyleInterpolator: CardStyleInterpolators.forFadeFromBottomAndroid 
       }}
     >
       {isLoggedIn ? (
         <>
-          {/* Contenedor principal de pestañas */}
-          <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="MainTabs">
+            {(props) => <MainTabs {...props} onLogout={handleLogout} />}
+          </Stack.Screen>
           
-          {/* Pantallas que se abren sobre las pestañas (Modales o detalles) */}
           <Stack.Screen 
             name="ExerciseDetail" 
             component={ExerciseDetail} 

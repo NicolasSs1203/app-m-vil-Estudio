@@ -193,7 +193,10 @@ class AIService {
 
     // 2. Armar prompt completo
     const systemPrompt = `${SYSTEM_PROMPTS.base}\n\n${SYSTEM_PROMPTS.exerciseAnalysis}`;
-    const userMessage = this.historyBuilder.contextToPromptText(context);
+    const contextText = this.historyBuilder.contextToPromptText(context);
+    
+    // Resaltar la respuesta actual para que la IA no la ignore
+    const userMessage = `${contextText}\n\n### RESPUESTA ACTUAL DEL ESTUDIANTE A EVALUAR:\n"${answer}"`;
 
     // 3. Llamar a la IA
     const result = await this.callAI(

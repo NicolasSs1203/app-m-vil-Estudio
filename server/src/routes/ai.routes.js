@@ -38,11 +38,18 @@ function createAIRoutes(db) {
         });
       }
 
-      // TODO: Obtener el ejercicio completo desde la DB
-      // Por ahora se acepta el exerciseId y se construye un placeholder
+      // Obtener el ejercicio completo desde la DB
+      const { ObjectId } = require('mongodb');
       let exercise = { _id: exerciseId };
       if (db && db.collection) {
-        exercise = await db.collection('exercises').findOne({ _id: exerciseId });
+        let queryId = exerciseId;
+        try {
+          if (typeof exerciseId === 'string' && /^[0-9a-fA-F]{24}$/.test(exerciseId)) {
+            queryId = new ObjectId(exerciseId);
+          }
+        } catch (e) {}
+        
+        exercise = await db.collection('exercises').findOne({ _id: queryId });
         if (!exercise) {
           return res.status(404).json({ error: 'Ejercicio no encontrado' });
         }
