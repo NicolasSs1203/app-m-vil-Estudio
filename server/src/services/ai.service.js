@@ -1,3 +1,4 @@
+const { z } = require('zod');
 const { getAIClient, getAIConfig } = require('../config/ai.config');
 const {
   ExerciseAnalysisSchema,
@@ -348,8 +349,6 @@ class AIService {
    * el provider no soporta json_schema estricto (ej: DeepSeek).
    */
   _zodSchemaToExample(schema) {
-    const { z } = require('zod');
-
     if (schema instanceof z.ZodObject) {
       const result = {};
       for (const [key, value] of Object.entries(schema.shape)) {
