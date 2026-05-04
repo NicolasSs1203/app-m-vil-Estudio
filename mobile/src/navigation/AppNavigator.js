@@ -24,7 +24,7 @@ import ExerciseDetail from '../screens/ExerciseDetail';
 import ProgressScreen from '../screens/ProgressScreen';
 
 // NUEVA PANTALLA F-08 — Pantalla de Recomendaciones
-import RecommendationsScreen from '../screens/RecommendationsScreen';
+import RecommendationScreen from '../screens/RecommendationScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -114,7 +114,7 @@ export default function AppNavigator() {
           {/* F-08: Pantalla de Recomendaciones Personalizadas */}
           <Stack.Screen 
             name="Recommendations" 
-            component={RecommendationsScreen} 
+            component={RecommendationScreen} 
             options={{ 
               headerShown: true, 
               title: 'Mi Plan de Estudio',
@@ -128,7 +128,9 @@ export default function AppNavigator() {
           <Stack.Screen name="Login">
             {(props) => <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />}
           </Stack.Screen>
-          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="Register">
+            {(props) => <RegisterScreen {...props} onLogin={() => setIsLoggedIn(true)} />}
+          </Stack.Screen>
         </>
       )}
     </Stack.Navigator>

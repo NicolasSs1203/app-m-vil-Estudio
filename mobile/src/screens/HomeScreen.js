@@ -5,11 +5,30 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   ScrollView, 
-  SafeAreaView 
+  SafeAreaView,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import user_service from '../services/user.service';
+import { useState, useEffect } from 'react';
+
 
 const HomeScreen = ({ navigation }) => {
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const data = await user_service.getProfile();
+        setUserData(data.user);
+      } catch (error) {
+        console.error("Error cargando usuario en Home:", error);
+        setUserData({ displayName: 'Estudiante' }); // Fallback para no quedarse en blanco
+      }
+    };
+    loadUser();
+  }, []);
+
   
   // Configuración de los accesos rápidos a las funciones de IA
   const menuItems = [
@@ -36,11 +55,19 @@ const HomeScreen = ({ navigation }) => {
     }
   ];
 
+  if (!userData) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#50A0FF" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.welcomeText}>Hola, Juan Sebastian</Text>
+          <Text style={styles.welcomeText}>Hola, {userData?.displayName || 'Estudiante'}</Text>
           <Text style={styles.brandText}>Zenith AI</Text>
         </View>
 

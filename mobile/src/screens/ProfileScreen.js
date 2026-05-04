@@ -7,7 +7,8 @@ import {
   TextInput, 
   Alert, 
   SafeAreaView, 
-  ActivityIndicator 
+  ActivityIndicator,
+  TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -28,10 +29,12 @@ const ProfileScreen = ({ onLogout }) => {
 
   const loadProfile = async () => {
     try {
-      // Usando el ID de Juan Sebastian
-      const data = await user_service.getProfile("user_123");
-      setUser(data.user);
-      setDailyGoal(data.user.dailyGoalMinutes?.toString() || '30');
+      const data = await user_service.getProfile();
+      if (data.user) {
+        setUser(data.user);
+        setDailyGoal(data.user.preferences?.dailyGoalMinutes?.toString() || '30');
+        setExperience(data.user.preferences?.experienceLevel || 'Principiante');
+      }
     } catch (error) {
       console.error("Error al cargar perfil:", error);
     } finally {
@@ -41,7 +44,7 @@ const ProfileScreen = ({ onLogout }) => {
 
   const handleUpdate = async () => {
     try {
-      await user_service.updatePreferences("user_123", {
+      await user_service.updatePreferences({
         dailyGoalMinutes: parseInt(dailyGoal),
         experienceLevel: experience
       });
@@ -69,10 +72,10 @@ const ProfileScreen = ({ onLogout }) => {
             <Text style={styles.avatarText}>JS</Text>
           </View>
           <Text style={[styles.userName, { color: colors.text }]}>
-            {user?.name || 'Juan Sebastian'}
+            {user?.displayName || 'Cargando...'}
           </Text>
           <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            {user?.email || 'juan.carvajal@u.edu.co'}
+            {user?.email}
           </Text>
         </View>
 

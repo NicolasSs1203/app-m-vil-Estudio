@@ -47,8 +47,13 @@ const ExercisesScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity 
       style={styles.exerciseCard}
-      // Usamos item.id que es el campo que viene de la DB de Kevin
-      onPress={() => navigation.navigate('ExerciseDetail', { exerciseId: item.id || item._id })}
+      onPress={(e) => {
+        // Fix para error de aria-hidden en Web
+        if (typeof document !== 'undefined' && document.activeElement) {
+          document.activeElement.blur();
+        }
+        navigation.navigate('ExerciseDetail', { exerciseId: item.id || item._id });
+      }}
     >
       <View style={styles.cardInfo}>
         <Text style={styles.exerciseTitle}>{item.title}</Text>

@@ -32,9 +32,14 @@ const exercise_service = {
   /**
    * Enviar respuesta para análisis de IA (F-05)
    */
-  submitExercise: async (exerciseId, answer) => {
+  submitExercise: async (exerciseId, answer, userId) => {
     try {
-      const response = await api.post(`/exercises/${exerciseId}/submit`, { answer });
+      // Usamos el endpoint de IA para obtener feedback detallado
+      const response = await api.post('/ai/analyze-exercise', { 
+        userId,
+        exerciseId, 
+        answer 
+      });
       return response.data;
     } catch (error) {
       console.error("Error en el envío a la IA:", error);

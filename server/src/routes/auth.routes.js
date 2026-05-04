@@ -154,4 +154,24 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// ───────────────────────────────────────────
+// 5. PUT /api/auth/preferences — Actualizar preferencias ✅
+// ───────────────────────────────────────────
+router.put('/preferences', authMiddleware, async (req, res) => {
+  try {
+    const { dailyGoalMinutes, experienceLevel } = req.body;
+    const user = await User.findById(req.user.id);
+    
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    if (dailyGoalMinutes) user.preferences.dailyGoalMinutes = dailyGoalMinutes;
+    if (experienceLevel) user.preferences.experienceLevel = experienceLevel;
+
+    await user.save();
+    res.json({ success: true, message: 'Preferencias actualizadas', user });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar preferencias' });
+  }
+});
+
 module.exports = router;

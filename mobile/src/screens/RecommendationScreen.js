@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, ScrollView, StyleSheet, TouchableOpacity, 
-  Linking, RefreshControl, SafeAreaView 
+  Linking, RefreshControl, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ai_service from '../services/ai.service';
+import user_service from '../services/user.service';
+
 
 const RecommendationsScreen = () => {
   const [data, setData] = useState(null);
@@ -13,10 +15,18 @@ const RecommendationsScreen = () => {
 
   const loadData = async () => {
     try {
-      const response = await ai_service.getRecommendations("user_123");
-      setData(response.data);
+      // Obtenemos el perfil real para tener el ID
+      const userProfile = await user_service.getProfile();
+      const userId = userProfile.user?._id;
+      
+      const response = await ai_service.getRecommendations(userId);
+      // El backend devuelve { success: true, recommendations: { recommendations: [...], ... } }
+      // Así que guardamos el objeto interno de recomendaciones
+      if (response && response.recommendations) {
+        setData(response.recommendations);
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Error cargando recomendaciones:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -33,12 +43,24 @@ const RecommendationsScreen = () => {
   };
 
   const getPriorityColor = (prio) => {
+    if (!prio) return '#4CAF50';
     switch(prio.toLowerCase()) {
+      case 'high': 
       case 'alta': return '#F44336';
+      case 'medium':
       case 'media': return '#FFC107';
       default: return '#4CAF50';
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#50A0FF" />
+        <Text style={{ color: '#8AABC8', marginTop: 10 }}>Cargando tu plan...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,12 +91,12 @@ const RecommendationsScreen = () => {
           <View key={index} style={styles.recCard}>
             <View style={[styles.priorityBar, { backgroundColor: getPriorityColor(rec.priority) }]} />
             <View style={styles.recContent}>
-              <View style={styles.recHeader}>
-                <Text style={styles.recType}>{rec.type}</Text>
+               <View style={styles.recHeader}>
+                <Text style={styles.recType}>{rec.type?.toUpperCase()}</Text>
                 <Text style={styles.recTime}><Ionicons name="time-outline" /> {rec.estimatedTime}</Text>
               </View>
-              <Text style={styles.recTitle}>{rec.title}</Text>
-              <Text style={styles.recDesc}>{rec.description}</Text>
+              <Text style={styles.recTitle}>{rec.topic}</Text>
+              <Text style={styles.recDesc}>{rec.reason}</Text>
               
               {rec.links?.map((link, lIdx) => (
                 <TouchableOpacity key={lIdx} style={styles.linkButton} onPress={() => Linking.openURL(link.url)}>

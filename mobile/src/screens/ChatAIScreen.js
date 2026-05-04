@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import user_service from '../services/user.service';
+
 import { 
   View, Text, TextInput, TouchableOpacity, FlatList, 
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator 
@@ -7,11 +9,29 @@ import { Ionicons } from '@expo/vector-icons';
 import ai_service from '../services/ai.service';
 
 const ChatAIScreen = ({ navigation }) => {
-  const [messages, setMessages] = useState([
-    { id: '1', text: '¡Hola Juan! Soy tu tutor Zenith. ¿En qué puedo ayudarte hoy con tus proyectos de software o Arduino?', sender: 'ai' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const initChat = async () => {
+      try {
+        const data = await user_service.getProfile();
+        setUser(data.user);
+        const name = data.user?.displayName?.split(' ')[0] || 'Recluta';
+        setMessages([
+          { id: '1', text: `¡Hola ${name}! Soy tu tutor Zenith. ¿En qué puedo ayudarte hoy?`, sender: 'ai' }
+        ]);
+      } catch (error) {
+        setMessages([
+          { id: '1', text: '¡Hola! Soy tu tutor Zenith. ¿En qué puedo ayudarte hoy?', sender: 'ai' }
+        ]);
+      }
+    };
+    initChat();
+  }, []);
+
   const flatListRef = useRef();
 
   const handleSend = async () => {
@@ -23,15 +43,15 @@ const ChatAIScreen = ({ navigation }) => {
     setIsTyping(true);
 
     try {
-      // El userId debería venir de tu estado global de Auth
-      const response = await ai_service.sendMessage(userMsg.text, "user_123");
+      const response = await ai_service.sendMessage(userMsg.text, user?._id || "anonymous");
+
       
       const aiMsg = {
         id: (Date.now() + 1).toString(),
-        text: response.reply,
+        text: response.answer,
         sender: 'ai',
         relatedTopics: response.relatedTopics || [],
-        suggestedExerciseId: response.suggestedExerciseId
+        suggestedExerciseId: response.suggestedExercise
       };
       
       setMessages(prev => [...prev, aiMsg]);

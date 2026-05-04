@@ -11,19 +11,47 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from "react-native-chart-kit";
-import { useTheme } from '../context/ThemeContext'; // F-10: Uso del tema central
-import { ZCard } from '../components/ZCard'; // F-10: Componente reutilizable
+import { useTheme } from '../context/ThemeContext';
+import { ZCard } from '../components/ZCard';
+import ai_service from '../services/ai.service';
+import user_service from '../services/user.service';
+
 
 const ProgressScreen = () => {
   const { colors, spacing } = useTheme();
+  const [progressData, setProgressData] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // F-11: Valor para la animación de pulso de la racha
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Simulación de carga de datos
-    const timer = setTimeout(() => setLoading(false), 1200);
+    const loadProgress = async () => {
+      try {
+        const userProfile = await user_service.getProfile();
+        const userId = userProfile.user?._id;
+        const result = await ai_service.analyzeProgress(userId);
+        
+        if (result.success) {
+          setProgressData(result.progress);
+        }
+      } catch (error) {
+        console.error("Error cargando progreso real:", error);
+        // Fallback para que no se vea vacío si es la primera vez
+        setProgressData({
+          currentStreak: 0,
+          longestStreak: 0,
+          summary: "Aún no hay suficientes datos para un análisis detallado. ¡Sigue practicando!",
+          improvements: [],
+          persistentWeaknesses: [],
+          chartData: [0, 0, 0, 0, 0, 0, 0]
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProgress();
 
     // F-11: Configuración de la animación de pulso infinito para la flama
     Animated.loop(
@@ -40,21 +68,9 @@ const ProgressScreen = () => {
         }),
       ])
     ).start();
-
-    return () => clearTimeout(timer);
   }, []);
 
-  const progressData = {
-    currentStreak: 5,
-    longestStreak: 12,
-    summary: "Tu enfoque en lógica de programación ha mejorado un 15% esta semana. Te recomendamos reforzar el manejo de estados en React Native.",
-    improvements: ["Optimización de bucles", "Estructuras de datos en JS", "Conexión I2C en Arduino"],
-    weaknesses: [
-      { topic: "Manejo de SQL", trend: "up", status: "Mejorando" },
-      { topic: "CSS Flexbox", trend: "down", status: "Requiere práctica" }
-    ],
-    chartData: [2, 5, 3, 8, 5, 9, 10]
-  };
+
 
   if (loading) {
     return (
@@ -140,18 +156,21 @@ const ProgressScreen = () => {
           
           <View style={styles.listSection}>
             <Text style={[styles.sectionSubTitle, { color: colors.text }]}>Por Mejorar 📈</Text>
-            {progressData.weaknesses.map((item, i) => (
+            {progressData.persistentWeaknesses?.map((item, i) => (
               <View key={i} style={styles.trendRow}>
                 <Ionicons 
-                  name={item.trend === 'up' ? "trending-up" : "trending-down"} 
+                  name={item.trend === 'improving' ? "trending-up" : "trending-down"} 
                   size={16} 
-                  color={item.trend === 'up' ? "#4CAF50" : "#F44336"} 
+                  color={item.trend === 'improving' ? "#4CAF50" : "#F44336"} 
                 />
                 <Text style={[styles.listItem, { color: colors.textSecondary }]}> 
                   {item.topic}
                 </Text>
               </View>
             ))}
+            {(!progressData.persistentWeaknesses || progressData.persistentWeaknesses.length === 0) && (
+              <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Sin alertas aún.</Text>
+            )}
           </View>
         </View>
 

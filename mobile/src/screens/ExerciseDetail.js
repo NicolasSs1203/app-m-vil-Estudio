@@ -10,6 +10,7 @@ import {
   Alert 
 } from 'react-native';
 import exercise_service from '../services/exercise.service';
+import user_service from '../services/user.service';
 import { ScoreAnim } from '../components/ScoreAnim'; // F-11: Micro-animación de score
 import { ZCard } from '../components/ZCard'; // F-10: Componente reutilizable
 import { ZButton } from '../components/ZButton'; // F-10: Componente reutilizable
@@ -21,15 +22,42 @@ const ExerciseDetail = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    fetchExercise();
+    const init = async () => {
+      try {
+        const profile = await user_service.getProfile();
+        setUserId(profile.user?._id);
+        await fetchExercise();
+      } catch (error) {
+        console.error("Error inicializando pantalla:", error);
+      }
+    };
+    init();
   }, [exerciseId]);
 
   const fetchExercise = async () => {
+    // Verificar si el ID parece un ObjectId de MongoDB (24 caracteres hex)
+    const isMongoId = /^[0-9a-fA-F]{24}$/.test(exerciseId);
+
+    if (!isMongoId) {
+      // Es un reto personalizado generado por la IA en texto
+      setExercise({
+        title: "Reto Personalizado IA",
+        description: exerciseId, // El texto de la sugerencia
+        difficulty: "Especial",
+        topic: "Refuerzo",
+        category: "Chat IA"
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await exercise_service.getExerciseById(exerciseId);
-      setExercise(data);
+      const result = await exercise_service.getExerciseById(exerciseId);
+      // El backend devuelve { success: true, data: { ... } }
+      setExercise(result.data || result);
     } catch (error) {
       Alert.alert("Error", "No se pudo cargar el detalle del reto.");
       navigation.goBack();
@@ -45,8 +73,10 @@ const ExerciseDetail = ({ route, navigation }) => {
     
     setSubmitting(true);
     try {
-      const result = await exercise_service.submitExercise(exerciseId, answer);
-      setFeedback(result); 
+      const result = await exercise_service.submitExercise(exerciseId, answer, userId);
+      console.log('DEBUG AI RESULT:', result);
+      // El backend devuelve { success: true, analysis: { score, overallFeedback, ... } }
+      setFeedback(result.analysis || result); 
     } catch (error) {
       Alert.alert("Error de IA", "El tutor no pudo procesar tu código.");
     } finally {
@@ -68,14 +98,14 @@ const ExerciseDetail = ({ route, navigation }) => {
       {/* Cabecera */}
       <View style={styles.header}>
         <Text style={styles.difficultyTag}>{exercise?.difficulty?.toUpperCase()}</Text>
-        <Text style={styles.title}>{exercise?.title}</Text>
-        <Text style={styles.topicText}>Tópico: {exercise?.topic} • Categoría: {exercise?.category}</Text>
+        <Text style={styles.title}>{exercise?.title || exercise?.topic || 'Reto de Programación'}</Text>
+        <Text style={styles.topicText}>Tópico: {exercise?.topic || 'General'} • Categoría: {exercise?.category || 'Software'}</Text>
       </View>
 
       {/* Problema */}
       <ZCard style={styles.problemCard}>
         <Text style={styles.cardTitle}>PROBLEMA</Text>
-        <Text style={styles.descriptionText}>{exercise?.description}</Text>
+        <Text style={styles.descriptionText}>{exercise?.question || exercise?.description}</Text>
       </ZCard>
 
       {/* Área de Respuesta */}
@@ -113,7 +143,7 @@ const ExerciseDetail = ({ route, navigation }) => {
           <View style={styles.divider} />
 
           <Text style={styles.feedbackSubtitle}>Feedback del experto:</Text>
-          <Text style={styles.feedbackText}>{feedback.feedback}</Text>
+          <Text style={styles.feedbackText}>{feedback.overallFeedback || feedback.feedback}</Text>
 
           {/* Conceptos Logrados */}
           {feedback.correctConcepts?.length > 0 && (
@@ -128,7 +158,9 @@ const ExerciseDetail = ({ route, navigation }) => {
             <View style={styles.areasContainer}>
               <Text style={styles.areasTitle}>📈 Recomendación de mejora:</Text>
               <Text style={styles.areasText}>
-                {Array.isArray(feedback.weakAreas) ? feedback.weakAreas.join(', ') : feedback.weakAreas}
+                {Array.isArray(feedback.weakAreas) 
+                  ? feedback.weakAreas.map(wa => typeof wa === 'object' ? wa.topic : wa).join(', ') 
+                  : feedback.weakAreas}
               </Text>
             </View>
           )}
