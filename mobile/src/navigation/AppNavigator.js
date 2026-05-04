@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator, CardStyleInterpolators } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,12 +10,21 @@ import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
-// Pantallas de Main (Asegúrate de que estos archivos existan en /screens)
+// Pantallas de Main
 import HomeScreen from '../screens/HomeScreen';
 import ExercisesScreen from '../screens/ExercisesScreen';
 import SkillTreeScreen from '../screens/SkillTreeScreen';
 import ChatAIScreen from '../screens/ChatAIScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+
+// NUEVA PANTALLA F-05
+import ExerciseDetail from '../screens/ExerciseDetail';
+
+// NUEVA PANTALLA F-06 — Pantalla de Progreso
+import ProgressScreen from '../screens/ProgressScreen';
+
+// NUEVA PANTALLA F-08 — Pantalla de Recomendaciones
+import RecommendationsScreen from '../screens/RecommendationsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -54,10 +63,9 @@ export default function AppNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Simulamos la carga inicial (ej. validar token en AsyncStorage)
     const initApp = setTimeout(() => {
       setIsLoading(false);
-    }, 2500); // 2.5 segundos de pantalla de carga
+    }, 2500);
     
     return () => clearTimeout(initApp);
   }, []);
@@ -67,12 +75,55 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        // F-11: Transición suave de desvanecimiento entre pantallas
+        cardStyleInterpolator: CardStyleInterpolators.forFadeFromBottomAndroid 
+      }}
+    >
       {isLoggedIn ? (
-        // Si entra aquí, muestra las pestañas
-        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <>
+          {/* Contenedor principal de pestañas */}
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          
+          {/* Pantallas que se abren sobre las pestañas (Modales o detalles) */}
+          <Stack.Screen 
+            name="ExerciseDetail" 
+            component={ExerciseDetail} 
+            options={{ 
+              headerShown: true, 
+              title: 'Resolver Reto',
+              headerStyle: { backgroundColor: '#050A15', borderBottomColor: '#152030' },
+              headerTintColor: '#fff'
+            }} 
+          />
+
+          {/* F-06: Pantalla de Progreso Analizado por IA */}
+          <Stack.Screen 
+            name="Progress" 
+            component={ProgressScreen} 
+            options={{ 
+              headerShown: true, 
+              title: 'Mi Rendimiento AI',
+              headerStyle: { backgroundColor: '#050A15', borderBottomColor: '#152030' },
+              headerTintColor: '#fff'
+            }} 
+          />
+
+          {/* F-08: Pantalla de Recomendaciones Personalizadas */}
+          <Stack.Screen 
+            name="Recommendations" 
+            component={RecommendationsScreen} 
+            options={{ 
+              headerShown: true, 
+              title: 'Mi Plan de Estudio',
+              headerStyle: { backgroundColor: '#050A15', borderBottomColor: '#152030' },
+              headerTintColor: '#fff'
+            }} 
+          />
+        </>
       ) : (
-        // Si no, muestra el flujo de Login
         <>
           <Stack.Screen name="Login">
             {(props) => <LoginScreen {...props} onLogin={() => setIsLoggedIn(true)} />}
