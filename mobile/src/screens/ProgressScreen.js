@@ -126,21 +126,27 @@ const ProgressScreen = () => {
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>
             Consistencia de Estudio
           </Text>
-          <LineChart
-            data={{
-              labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
-              datasets: [{ data: progressData.chartData }]
-            }}
-            width={Dimensions.get("window").width - 40}
-            height={180}
-            chartConfig={{
-              ...chartConfig,
-              color: (opacity = 1) => `rgba(80, 160, 255, ${opacity})`,
-              labelColor: (opacity = 1) => colors.textSecondary,
-            }}
-            bezier
-            style={styles.chartStyle}
-          />
+          {progressData?.chartData && Array.isArray(progressData.chartData) && progressData.chartData.length > 0 ? (
+            <LineChart
+              data={{
+                labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+                datasets: [{ data: progressData.chartData }]
+              }}
+              width={Dimensions.get("window").width - 40}
+              height={180}
+              chartConfig={{
+                ...chartConfig,
+                color: (opacity = 1) => `rgba(80, 160, 255, ${opacity})`,
+                labelColor: (opacity = 1) => colors.textSecondary,
+              }}
+              bezier
+              style={styles.chartStyle}
+            />
+          ) : (
+            <View style={[styles.summaryCard, { alignItems: 'center', padding: 20 }]}>
+              <Text style={{ color: colors.textSecondary }}>Aún no hay datos de actividad para esta semana.</Text>
+            </View>
+          )}
         </View>
 
         {/* Mejoras y Debilidades */}
