@@ -308,8 +308,18 @@ class AIService {
    * @param {Object} data - Datos del análisis (result + tokensUsed)
    */
   async saveAnalysis(userId, type, triggerEvent, data) {
+    const { ObjectId } = require('mongodb');
+    let queryId = userId;
+    try {
+      if (typeof userId === 'string' && /^[0-9a-fA-F]{24}$/.test(userId)) {
+        queryId = new ObjectId(userId);
+      }
+    } catch (e) {
+      queryId = userId;
+    }
+
     const record = {
-      userId,
+      userId: queryId,
       type,
       triggerEvent,
       result: data.result,

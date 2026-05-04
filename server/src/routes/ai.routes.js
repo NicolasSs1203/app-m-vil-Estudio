@@ -142,10 +142,11 @@ function createAIRoutes(db) {
         progress,
       });
     } catch (error) {
-      console.error('[AI Route] Error en progress:', error);
+      console.error('❌ [AI Route] CRASH en analyze-progress:', error);
       res.status(500).json({
         error: 'Error al analizar el progreso',
         message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
   });

@@ -8,9 +8,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ImageBackground,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import authService from '../../services/auth.service';
 
 const LEVELS = [
@@ -31,7 +35,6 @@ const RegisterScreen = ({ onLogin }) => {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
-  // ── Validación local ──────────────────────────────────────────
   const validate = () => {
     if (!formData.nombre.trim())   return 'El nombre es obligatorio.';
     if (!formData.email.trim())    return 'El correo es obligatorio.';
@@ -41,7 +44,6 @@ const RegisterScreen = ({ onLogin }) => {
     return null;
   };
 
-  // ── Registro ──────────────────────────────────────────────────
   const handleRegister = async () => {
     setError('');
     const validationError = validate();
@@ -56,217 +58,278 @@ const RegisterScreen = ({ onLogin }) => {
         nivel:    formData.nivel,
       });
 
-      // Guardar token JWT en AsyncStorage
       if (response.token) {
         await AsyncStorage.setItem('userToken', response.token);
       }
 
+      // En la web Alert.alert usa window.alert, nos aseguramos de que se vea
       Alert.alert(
-        '¡Cuenta creada!',
-        `Bienvenido, ${formData.nombre}. Ya puedes comenzar tu entrenamiento.`,
-        [{ text: 'Continuar', onPress: () => onLogin() }]
+        '🚀 ¡Cuenta Activada!',
+        `Bienvenido al sistema Zenith, ${formData.nombre}. Ya puedes comenzar tu entrenamiento.`,
+        [
+          { 
+            text: 'ENTRAR AL SISTEMA', 
+            onPress: () => {
+              if (onLogin) onLogin(); 
+            }
+          }
+        ],
+        { cancelable: false }
       );
+
+      // Fallback para Web si Alert no bloquea
+      if (Platform.OS === 'web') {
+        setTimeout(() => {
+          if (onLogin) onLogin();
+        }, 3000);
+      }
+
     } catch (err) {
       const msg = err.response?.data?.error || 'Error al registrar. Intenta de nuevo.';
-      // Caso común: correo ya registrado
-      if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('existe')) {
-        setError('Este correo ya tiene una cuenta. ¿Quieres iniciar sesión?');
-      } else {
-        setError(msg);
-      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Crea tu cuenta</Text>
-      <Text style={styles.subtitle}>Únete a la comunidad de entrenamiento</Text>
+    <ImageBackground
+      source={require('../../../assets/fondoBlanco.jpg')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+          <View style={styles.brandContainer}>
+            <Text style={styles.title}>Zenith</Text>
+            <Text style={styles.subtitle}>Crea tu perfil de recluta</Text>
+          </View>
 
-      {/* Error global */}
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <View style={styles.formContainer}>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      {/* Nombre */}
-      <TextInput
-        style={styles.input}
-        placeholder="Nombre completo"
-        placeholderTextColor="#94a3b8"
-        value={formData.nombre}
-        onChangeText={(val) => setFormData({ ...formData, nombre: val })}
-      />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="person-outline" size={20} color="#FF3131" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Nombre completo"
+                placeholderTextColor="#8AABC8"
+                value={formData.nombre}
+                onChangeText={(val) => setFormData({ ...formData, nombre: val })}
+              />
+            </View>
 
-      {/* Email */}
-      <TextInput
-        style={styles.input}
-        placeholder="Correo electrónico"
-        placeholderTextColor="#94a3b8"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={formData.email}
-        onChangeText={(val) => setFormData({ ...formData, email: val })}
-      />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={20} color="#FF3131" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Correo electrónico"
+                placeholderTextColor="#8AABC8"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(val) => setFormData({ ...formData, email: val })}
+              />
+            </View>
 
-      {/* Password */}
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña (mín. 6 caracteres)"
-        placeholderTextColor="#94a3b8"
-        secureTextEntry
-        value={formData.password}
-        onChangeText={(val) => setFormData({ ...formData, password: val })}
-      />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={20} color="#FF3131" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Contraseña (mín. 6)"
+                placeholderTextColor="#8AABC8"
+                secureTextEntry
+                value={formData.password}
+                onChangeText={(val) => setFormData({ ...formData, password: val })}
+              />
+            </View>
 
-      {/* Selector de Nivel */}
-      <Text style={styles.levelLabel}>Nivel de experiencia</Text>
-      <View style={styles.levelRow}>
-        {LEVELS.map((lvl) => (
-          <TouchableOpacity
-            key={lvl.value}
-            style={[
-              styles.levelBtn,
-              formData.nivel === lvl.value && styles.levelBtnActive,
-            ]}
-            onPress={() => setFormData({ ...formData, nivel: lvl.value })}
-          >
-            <Text
-              style={[
-                styles.levelBtnText,
-                formData.nivel === lvl.value && styles.levelBtnTextActive,
-              ]}
+            <Text style={styles.levelLabel}>Nivel de experiencia</Text>
+            <View style={styles.levelRow}>
+              {LEVELS.map((lvl) => (
+                <TouchableOpacity
+                  key={lvl.value}
+                  style={[
+                    styles.levelBtn,
+                    formData.nivel === lvl.value && styles.levelBtnActive,
+                  ]}
+                  onPress={() => setFormData({ ...formData, nivel: lvl.value })}
+                >
+                  <Text style={[
+                    styles.levelBtnText,
+                    formData.nivel === lvl.value && styles.levelBtnTextActive,
+                  ]}>
+                    {lvl.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, loading && { opacity: 0.7 }]}
+              onPress={handleRegister}
+              disabled={loading}
             >
-              {lvl.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.buttonText}>CREAR CUENTA</Text>
+              }
+            </TouchableOpacity>
 
-      {/* Botón registrar */}
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleRegister}
-        disabled={loading}
-      >
-        {loading
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>Registrarse</Text>
-        }
-      </TouchableOpacity>
-
-      {/* Link a Login */}
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Login')}
-        style={styles.linkContainer}
-      >
-        <Text style={styles.linkText}>¿Ya tienes cuenta? <Text style={styles.linkBold}>Inicia sesión</Text></Text>
-      </TouchableOpacity>
-    </ScrollView>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              style={styles.linkContainer}
+            >
+              <Text style={styles.linkText}>
+                ¿Ya tienes cuenta? <Text style={styles.linkHighlight}>Inicia sesión</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundImage: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  scrollContainer: {
     flexGrow: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
+  brandContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
+    fontSize: 52,
+    fontWeight: '900',
+    color: '#FF3131',
+    letterSpacing: 5,
+    textTransform: 'uppercase',
+    textShadowColor: 'rgba(255, 49, 49, 0.8)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#64748b',
-    marginBottom: 28,
-    textAlign: 'center',
+    fontSize: 12,
+    color: '#FF3131',
+    letterSpacing: 3,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    opacity: 0.8,
+  },
+  formContainer: {
+    backgroundColor: 'rgba(15, 20, 30, 0.85)',
+    borderRadius: 30,
+    padding: 24,
+    borderWidth: 1.5,
+    borderColor: '#FF3131',
+    shadowColor: '#FF3131',
+    shadowRadius: 15,
+    elevation: 10,
   },
   errorText: {
-    width: '100%',
-    color: '#dc2626',
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 13,
+    color: '#FF3131',
     textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 49, 49, 0.2)',
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 14,
-    backgroundColor: '#f8fafc',
-    color: '#1e293b',
-    fontSize: 15,
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
   },
   levelLabel: {
-    width: '100%',
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
+    fontSize: 12,
+    color: '#8AABC8',
     marginBottom: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   levelRow: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: 20,
-    width: '100%',
   },
   levelBtn: {
     flex: 1,
-    paddingVertical: 10,
+    height: 40,
     borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 49, 49, 0.3)',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   levelBtnActive: {
-    borderColor: '#2563eb',
-    backgroundColor: '#eff6ff',
+    borderColor: '#FF3131',
+    backgroundColor: 'rgba(255, 49, 49, 0.2)',
   },
   levelBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#8AABC8',
   },
   levelBtnTextActive: {
-    color: '#2563eb',
+    color: '#fff',
   },
   button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#2563eb',
-    borderRadius: 10,
+    backgroundColor: '#FF3131',
+    borderRadius: 12,
+    height: 56,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
-  },
-  buttonDisabled: {
-    backgroundColor: '#93c5fd',
+    shadowColor: '#FF3131',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '900',
+    letterSpacing: 2,
   },
   linkContainer: {
-    marginTop: 22,
+    marginTop: 20,
+    alignItems: 'center',
   },
   linkText: {
-    color: '#64748b',
+    color: '#8AABC8',
     fontSize: 14,
   },
-  linkBold: {
-    color: '#2563eb',
-    fontWeight: '700',
+  linkHighlight: {
+    color: '#FF3131',
+    fontWeight: 'bold',
   },
 });
 
