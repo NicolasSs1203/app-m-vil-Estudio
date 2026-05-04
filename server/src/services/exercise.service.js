@@ -1,92 +1,78 @@
+const { Exercise, UserResponse } = require('../models/Schemas');
+
 class ExerciseService {
   constructor(db) {
     this.db = db;
-    this.collection = db ? db.collection('exercises') : null;
-
-    // Datos de prueba con respuestas correctas para validar el Submit
-    this.mockExercises = [
-      { 
-        id: '1', 
-        title: 'Lógica de Programación', 
-        topic: 'software', 
-        difficulty: 'easy', 
-        category: 'logic',
-        correctAnswer: '42' // Respuesta ejemplo
-      },
-      { 
-        id: '2', 
-        title: 'Circuitos con Arduino', 
-        topic: 'electronics', 
-        difficulty: 'medium', 
-        category: 'hardware',
-        correctAnswer: 'resistencia'
-      },
-      { 
-        id: '3', 
-        title: 'Consultas SQL Avanzadas', 
-        topic: 'software', 
-        difficulty: 'hard', 
-        category: 'databases',
-        correctAnswer: 'SELECT'
-      }
-    ];
-
-    // Simulación de base de datos para respuestas (user_responses)
-    this.userResponses = [];
   }
 
   async findAll(filters = {}) {
     const { topic, difficulty, category } = filters;
-    let exercises = [...this.mockExercises];
-    if (topic) exercises = exercises.filter(e => e.topic === topic);
-    if (difficulty) exercises = exercises.filter(e => e.difficulty === difficulty);
-    if (category) exercises = exercises.filter(e => e.category === category);
-    return exercises;
+    const query = {};
+    if (topic) query.topic = topic;
+    if (difficulty) query.difficulty = difficulty;
+    if (category) query.category = category;
+    
+    // Devolvemos los ejercicios excluyendo la respuesta correcta por seguridad (opcional, pero buena práctica)
+    return await Exercise.find(query).select('-correctAnswer');
   }
 
   async findById(id) {
-    return this.mockExercises.find(e => e.id === id);
+    return await Exercise.findById(id);
   }
 
-  // NUEVO: Método para procesar el envío de respuesta (Checklist ✅)
   async submitResponse(exerciseId, userId, userSolution) {
-    const exercise = await this.findById(exerciseId);
+    // 1. Obtener el ejercicio con su respuesta correcta
+    const exercise = await Exercise.findById(exerciseId);
     if (!exercise) throw new Error('Ejercicio no encontrado');
 
-    // 1. Verificar si es correcta (Checklist ✅)
-    const isCorrect = userSolution.trim().toLowerCase() === exercise.correctAnswer.toLowerCase();
+    // 2. Verificar si es correcta
+    let isCorrect = false;
+    
+    // Validar según el tipo de respuesta esperada
+    if (typeof exercise.correctAnswer === 'string') {
+      isCorrect = String(userSolution).trim().toLowerCase() === exercise.correctAnswer.toLowerCase();
+    } else if (Array.isArray(exercise.correctAnswer)) {
+      // Si la respuesta es un array (ej. de opciones múltiples), verificamos si la solución está incluida o si coincide exactamente
+      isCorrect = exercise.correctAnswer.includes(userSolution) || 
+                  JSON.stringify(exercise.correctAnswer) === JSON.stringify(userSolution);
+    } else {
+      isCorrect = exercise.correctAnswer == userSolution;
+    }
 
-    // 2. Calcular attemptNumber (Checklist ✅)
-    // Filtramos las respuestas previas de este usuario para este ejercicio
-    const previousAttempts = this.userResponses.filter(
-      r => r.exerciseId === exerciseId && r.userId === userId
-    );
-    const attemptNumber = previousAttempts.length + 1;
+    // 3. Calcular attemptNumber contando los intentos previos en la base de datos
+    const previousAttempts = await UserResponse.countDocuments({
+      exerciseId: exerciseId,
+      userId: userId
+    });
+    const attemptNumber = previousAttempts + 1;
 
-    // 3. Crear el registro para "user_responses" (Checklist ✅)
-    const responseRecord = {
-      id: `resp_${Date.now()}`,
-      exerciseId,
+    // 4. Crear y guardar el registro en la base de datos
+    const responseRecord = new UserResponse({
       userId,
-      userSolution,
+      exerciseId,
+      answer: userSolution,
       isCorrect,
       attemptNumber,
-      submittedAt: new Date()
-    };
+      // Se podría recibir el tiempo invertido desde el cliente, pero por ahora lo dejamos en 0 o el que envíen
+      timeSpentSeconds: 0 
+    });
 
-    // Guardamos en nuestro array (simulando la DB)
-    this.userResponses.push(responseRecord);
+    await responseRecord.save();
     
-    return responseRecord;
+    // Devolvemos el resultado al cliente
+    return {
+      success: true,
+      isCorrect,
+      attemptNumber,
+      message: isCorrect ? '¡Excelente! Respuesta correcta.' : 'No es la respuesta correcta, ¡inténtalo de nuevo!',
+      submittedAt: responseRecord.submittedAt,
+      explanation: isCorrect ? exercise.explanation : null
+    };
   }
 
   async create(data) {
-    const newExercise = {
-      id: Date.now().toString(),
-      ...data,
-      createdAt: new Date()
-    };
-    this.mockExercises.push(newExercise);
+    const newExercise = new Exercise(data);
+    await newExercise.save();
     return newExercise;
   }
 }
