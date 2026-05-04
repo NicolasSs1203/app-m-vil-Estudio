@@ -68,13 +68,17 @@ Prioriza las recomendaciones de mayor a menor urgencia.`,
 - Consistencia de estudio (rachas de días, regularidad)
 Sé específico con datos del historial, no generalices.`,
 
-  /**
-   * Prompt específico para chat libre con el tutor.
-   */
   chat: `El estudiante te hace una pregunta libre. Responde de manera clara y pedagógica, 
 considerando su historial de aprendizaje para personalizar tu respuesta.
 Si la pregunta se relaciona con un tema que le ha costado, aprovecha para reforzar.
 Sugiere un ejercicio práctico si es relevante.`,
+
+  /**
+   * Prompt específico para generar planes de proyecto.
+   */
+  projectPlan: `Eres un Arquitecto de Software y Mentor Senior. Diseña un plan de estudio detallado y profesional para el proyecto solicitado. 
+Divide el aprendizaje en fases lógicas (ej: UI/UX, Backend, Despliegue) y explica qué temas debe dominar en cada una. 
+Asegúrate de que el plan sea práctico y orientado a resultados reales.`
 };
 
 class AIService {
@@ -292,6 +296,26 @@ class AIService {
       userMessage,
       'tutor_chat_response',
       TutorChatResponseSchema
+    );
+
+    return result.data;
+  }
+
+  // ───────────────────────────────────────────
+  // Plan de Proyecto Personalizado
+  // ───────────────────────────────────────────
+  async generateProjectPlan(userId, projectName) {
+    const context = await this.historyBuilder.buildContext(userId, 'chat'); // Usamos contexto básico
+
+    const systemPrompt = `${SYSTEM_PROMPTS.base}\n\n${SYSTEM_PROMPTS.projectPlan}`;
+    const userMessage = `${this.historyBuilder.contextToPromptText(context)}\n\n## Proyecto Solicitado\nQuiero aprender a desarrollar: ${projectName}. Diseña un plan de estudio para mi.`;
+
+    const { ProjectPlanSchema } = require('../schemas/ai.schemas');
+    const result = await this.callAI(
+      systemPrompt,
+      userMessage,
+      'project_plan_generation',
+      ProjectPlanSchema
     );
 
     return result.data;

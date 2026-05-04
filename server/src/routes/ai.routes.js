@@ -152,6 +152,35 @@ function createAIRoutes(db) {
   });
 
   // ───────────────────────────────────────────
+  // POST /api/ai/project-plan
+  // ───────────────────────────────────────────
+  // Genera un plan de estudio para un proyecto específico.
+  router.post('/project-plan', async (req, res) => {
+    try {
+      const { userId, projectName } = req.body;
+
+      if (!userId || !projectName) {
+        return res.status(400).json({
+          error: 'Campos requeridos: userId, projectName',
+        });
+      }
+
+      const plan = await aiService.generateProjectPlan(userId, projectName);
+
+      res.json({
+        success: true,
+        plan,
+      });
+    } catch (error) {
+      console.error('❌ [AI Route] Error en project-plan:', error);
+      res.status(500).json({
+        error: 'Error al generar el plan de proyecto',
+        message: error.message,
+      });
+    }
+  });
+
+  // ───────────────────────────────────────────
   // POST /api/ai/chat
   // ───────────────────────────────────────────
   // Chat libre con el tutor IA.

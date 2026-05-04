@@ -88,6 +88,22 @@ const ProgressAnalysisSchema = z.object({
 });
 
 // ───────────────────────────────────────────
+// Schema: Plan de estudio para un proyecto específico
+// ───────────────────────────────────────────
+const ProjectPlanSchema = z.object({
+  title: z.string().describe('Nombre del proyecto o área de estudio'),
+  description: z.string().describe('Breve descripción del objetivo del proyecto'),
+  prerequisites: z.array(z.string()).describe('Conocimientos previos recomendados'),
+  roadmap: z.array(z.object({
+    phase: z.string().describe('Nombre de la fase, ej: "Fase 1: UI/UX"'),
+    description: z.string().describe('Qué se aprenderá en esta fase'),
+    keyTopics: z.array(z.string()).describe('Temas específicos a dominar')
+  })).describe('Hoja de ruta paso a paso'),
+  keySkills: z.array(z.string()).describe('Habilidades que el estudiante adquirirá'),
+  estimatedWeeks: z.number().describe('Tiempo estimado para completar el plan')
+});
+
+// ───────────────────────────────────────────
 // Schema: Respuesta de chat libre con el tutor
 // ───────────────────────────────────────────
 const TutorChatResponseSchema = z.object({
@@ -200,6 +216,7 @@ module.exports = {
   StudyRecommendationSchema,
   PersistentWeaknessSchema,
   ProgressAnalysisSchema,
+  ProjectPlanSchema,
   TutorChatResponseSchema,
 
   // Helper
